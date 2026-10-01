@@ -1,0 +1,1429 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Mochi Drama Central — a tiny cyber-cute digital pet game." />
+  <title>Mochi Drama Central</title>
+
+  <style>
+    :root {
+      --bg: #0b0b12;
+      --panel: #131322;
+      --panel-2: #1b1b30;
+      --border: #282846;
+      --text: #f8f9fa;
+      --muted: #a0a0c0;
+      --pink: #ff2e7e;
+      --cyan: #00f0ff;
+      --yellow: #ffc857;
+      --mint: #06d6a0;
+      --orange: #ff6b3b;
+      --red: #ef233c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 90% 10%, rgba(255, 46, 126, 0.08), transparent 30rem),
+        radial-gradient(circle at 0% 100%, rgba(0, 240, 255, 0.08), transparent 30rem),
+        var(--bg);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0.06;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent 0 3px,
+        rgba(255,255,255,0.3) 4px
+      );
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(1500px, 100%);
+      margin: 0 auto;
+      padding: 28px 32px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 24px;
+      padding-bottom: 24px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kicker,
+    .section-kicker,
+    .mono {
+      font-family: "Courier New", monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .kicker,
+    .section-kicker {
+      color: var(--cyan);
+      font-size: 10px;
+    }
+
+    .kicker::before {
+      content: "●";
+      margin-right: 8px;
+      color: var(--mint);
+      text-shadow: 0 0 10px var(--mint);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin: 14px 0 10px;
+      font-family: "Courier New", monospace;
+      font-size: clamp(28px, 5vw, 52px);
+      line-height: 1;
+      letter-spacing: -0.09em;
+    }
+
+    h1 span {
+      color: var(--pink);
+    }
+
+    .subtitle {
+      max-width: 650px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 9px 12px;
+      color: var(--muted);
+      font-family: "Courier New", monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 10px var(--mint);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      background: var(--panel-2);
+      transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        background 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      border-color: var(--cyan);
+      background: #252542;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.18);
+    }
+
+    .button.primary {
+      border-color: var(--pink);
+      background: var(--pink);
+      color: #180711;
+      font-weight: bold;
+    }
+
+    .button.primary:hover {
+      border-color: #ff70a9;
+      background: #ff70a9;
+      box-shadow: 0 0 18px rgba(255, 46, 126, 0.35);
+    }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 3fr) minmax(380px, 6fr) minmax(260px, 3fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(19, 19, 34, 0.88);
+      box-shadow:
+        0 0 18px rgba(0, 240, 255, 0.06),
+        inset 0 1px rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel-content {
+      padding: 20px;
+    }
+
+    .panel-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .panel-heading h2,
+    .panel-heading h3 {
+      margin: 8px 0 0;
+      font-size: 21px;
+    }
+
+    .panel-heading p {
+      margin-bottom: 0;
+    }
+
+    .stats-panel {
+      min-height: 100%;
+    }
+
+    .stat-row {
+      margin-bottom: 22px;
+      padding-left: 12px;
+      border-left: 2px solid var(--border);
+    }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-family: "Courier New", monospace;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .stat-track {
+      height: 8px;
+      margin-top: 9px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #08080e;
+    }
+
+    .stat-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      transition: width 500ms cubic-bezier(.22, 1, .36, 1);
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .hunger-color {
+      color: var(--yellow);
+      background: var(--yellow);
+    }
+
+    .energy-color {
+      color: var(--cyan);
+      background: var(--cyan);
+    }
+
+    .drama-color {
+      color: var(--pink);
+      background: var(--pink);
+    }
+
+    .danger-color {
+      color: var(--red);
+      background: var(--red);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .metric {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px;
+      background: rgba(8, 8, 14, 0.45);
+    }
+
+    .metric-label {
+      color: #666680;
+      font-family: "Courier New", monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      grid-column: 1 / -1;
+      margin-top: 4px;
+      font-family: "Courier New", monospace;
+      font-size: 19px;
+      letter-spacing: 0.06em;
+    }
+
+    .mood-summary {
+      margin-top: 22px;
+      padding-top: 17px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mood-summary-value {
+      margin: 9px 0 5px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .mood-summary-detail {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .room-panel {
+      min-width: 0;
+    }
+
+    .room-shell {
+      padding: 12px;
+    }
+
+    .room-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 4px 12px;
+    }
+
+    .room-caption {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .live {
+      color: var(--mint);
+      font-family: "Courier New", monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .room {
+      position: relative;
+      min-height: 450px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background:
+        radial-gradient(circle at 50% 58%, rgba(255, 46, 126, 0.15), transparent 26%),
+        linear-gradient(180deg, rgba(0,240,255,0.08), transparent 43%),
+        #111121;
+      isolation: isolate;
+    }
+
+    .room::before {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      content: "";
+      background:
+        linear-gradient(rgba(40, 40, 70, 0.8) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(40, 40, 70, 0.8) 1px, transparent 1px);
+      background-size: 34px 34px;
+      opacity: 0.28;
+      transform: perspective(240px) rotateX(52deg) scale(1.5);
+      transform-origin: top;
+    }
+
+    .window {
+      position: absolute;
+      top: 13%;
+      left: 12%;
+      width: 120px;
+      height: 90px;
+      border: 5px solid var(--border);
+      border-radius: 8px;
+      background: linear-gradient(140deg, rgba(0, 240, 255, 0.28), rgba(255, 46, 126, 0.14));
+      box-shadow: 0 0 28px rgba(0, 240, 255, 0.13);
+    }
+
+    .window::before,
+    .window::after {
+      position: absolute;
+      content: "";
+      background: var(--border);
+    }
+
+    .window::before {
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 4px;
+    }
+
+    .window::after {
+      right: 0;
+      left: 0;
+      top: 50%;
+      height: 4px;
+    }
+
+    .window-light {
+      position: absolute;
+      right: 9px;
+      bottom: 8px;
+      width: 24px;
+      height: 8px;
+      background: var(--yellow);
+      box-shadow: 0 0 13px var(--yellow);
+    }
+
+    .plant {
+      position: absolute;
+      right: 13%;
+      bottom: 22%;
+      width: 52px;
+      height: 90px;
+      border-bottom: 11px solid var(--orange);
+      border-radius: 5px 5px 13px 13px;
+    }
+
+    .plant::before {
+      position: absolute;
+      bottom: 48px;
+      left: 24px;
+      width: 5px;
+      height: 55px;
+      content: "";
+      background: var(--mint);
+    }
+
+    .plant::after {
+      position: absolute;
+      bottom: 77px;
+      left: 8px;
+      width: 27px;
+      height: 14px;
+      content: "";
+      border-radius: 100% 0;
+      background: var(--mint);
+      transform: rotate(-30deg);
+      box-shadow: 21px 7px 0 var(--mint);
+    }
+
+    .cable {
+      position: absolute;
+      bottom: 24%;
+      left: 20%;
+      width: 112px;
+      height: 65px;
+      border-bottom: 3px solid var(--orange);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 0 0 38px;
+      opacity: 0.8;
+      transform: rotate(-10deg);
+    }
+
+    .cable span {
+      position: absolute;
+      right: -20px;
+      bottom: -12px;
+      color: var(--orange);
+      font: 8px "Courier New", monospace;
+    }
+
+    .cat-shadow {
+      position: absolute;
+      bottom: 14%;
+      left: 50%;
+      width: 170px;
+      height: 28px;
+      border-radius: 50%;
+      background: #08080e;
+      filter: blur(7px);
+      transform: translateX(-50%);
+    }
+
+    .cat {
+      position: absolute;
+      bottom: 16%;
+      left: 50%;
+      width: 146px;
+      height: 184px;
+      animation: cat-bob 3.5s ease-in-out infinite;
+      transform: translateX(-50%);
+    }
+
+    .cat.sleeping {
+      animation: cat-breathe 3s ease-in-out infinite;
+    }
+
+    .cat-face {
+      position: absolute;
+      top: 30px;
+      left: 17px;
+      z-index: 3;
+      width: 112px;
+      height: 95px;
+      border: 3px solid #171729;
+      border-radius: 47% 47% 44% 44%;
+      background: var(--yellow);
+      box-shadow: inset -6px -7px rgba(255,107,59,.24), 0 6px #ef8e45;
+    }
+
+    .cat-ear {
+      position: absolute;
+      top: 3px;
+      z-index: 1;
+      width: 53px;
+      height: 61px;
+      border: 3px solid #171729;
+      background: var(--yellow);
+      transform: rotate(45deg) skew(7deg,7deg);
+    }
+
+    .cat-ear.left {
+      left: 8px;
+      border-radius: 60% 0 35% 0;
+    }
+
+    .cat-ear.right {
+      right: 8px;
+      border-radius: 0 60% 0 35%;
+    }
+
+    .cat-eye {
+      position: absolute;
+      top: 38px;
+      width: 10px;
+      height: 15px;
+      border-radius: 50%;
+      background: #171729;
+    }
+
+    .cat-eye.left {
+      left: 27px;
+    }
+
+    .cat-eye.right {
+      right: 27px;
+    }
+
+    .cat-nose {
+      position: absolute;
+      top: 57px;
+      left: 50%;
+      width: 9px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--pink);
+      transform: translateX(-50%);
+    }
+
+    .cat-mouth {
+      position: absolute;
+      top: 63px;
+      left: 50%;
+      color: #171729;
+      font: bold 18px "Courier New", monospace;
+      transform: translateX(-50%);
+    }
+
+    .cat-belly {
+      position: absolute;
+      bottom: 0;
+      left: 29px;
+      width: 88px;
+      height: 107px;
+      border: 3px solid #171729;
+      border-radius: 48% 48% 35% 35%;
+      background: var(--yellow);
+    }
+
+    .cat-paw {
+      position: absolute;
+      bottom: 5px;
+      z-index: 4;
+      width: 33px;
+      height: 47px;
+      border: 3px solid #171729;
+      border-radius: 40%;
+      background: var(--yellow);
+    }
+
+    .cat-paw.left {
+      left: 25px;
+      transform: rotate(7deg);
+    }
+
+    .cat-paw.right {
+      right: 25px;
+      transform: rotate(-7deg);
+    }
+
+    .cat-tail {
+      position: absolute;
+      right: -14px;
+      bottom: 38px;
+      width: 54px;
+      height: 88px;
+      border: 11px solid var(--yellow);
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      transform: rotate(12deg);
+      filter: drop-shadow(2px 2px #171729);
+    }
+
+    .nameplate {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      border: 1px solid rgba(255, 46, 126, 0.3);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: rgba(19, 19, 34, 0.9);
+      box-shadow: 0 0 18px rgba(255, 46, 126, 0.15);
+    }
+
+    .nameplate small {
+      display: block;
+      color: var(--pink);
+      font: 9px "Courier New", monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .nameplate strong {
+      display: block;
+      margin-top: 6px;
+      font: bold 12px "Courier New", monospace;
+    }
+
+    .mood-badge {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(11, 11, 18, 0.8);
+      backdrop-filter: blur(12px);
+    }
+
+    .mood-badge strong {
+      font: 10px "Courier New", monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .reaction {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: -1px;
+      padding: 13px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--panel);
+    }
+
+    .reaction.happy {
+      border-color: rgba(6, 214, 160, 0.4);
+    }
+
+    .reaction.warning {
+      border-color: rgba(255, 107, 59, 0.5);
+    }
+
+    .reaction.danger {
+      border-color: rgba(239, 35, 60, 0.7);
+      animation: shake 0.35s linear;
+    }
+
+    .reaction-mark {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      flex: 0 0 27px;
+      place-items: center;
+      border-radius: 7px;
+      background: var(--panel-2);
+      color: var(--pink);
+      font: bold 16px "Courier New", monospace;
+    }
+
+    .reaction.warning .reaction-mark {
+      color: var(--orange);
+    }
+
+    .reaction.danger .reaction-mark {
+      color: var(--red);
+    }
+
+    .reaction-label {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font: 9px "Courier New", monospace;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .reaction-message {
+      margin: 0;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .fact {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--muted);
+      font: 9px "Courier New", monospace;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .actions-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .action-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .action {
+      display: grid;
+      grid-template-columns: 38px 1fr 18px;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 72px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      background: rgba(11, 11, 18, 0.52);
+      text-align: left;
+      transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background 160ms ease,
+        box-shadow 160ms ease;
+    }
+
+    .action:hover {
+      transform: translateX(3px);
+      background: var(--panel-2);
+    }
+
+    .action.pink:hover {
+      border-color: var(--pink);
+      box-shadow: 0 0 16px rgba(255, 46, 126, 0.16);
+    }
+
+    .action.cyan:hover {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.16);
+    }
+
+    .action.yellow:hover {
+      border-color: var(--yellow);
+      box-shadow: 0 0 16px rgba(255, 200, 87, 0.16);
+    }
+
+    .action.orange:hover {
+      border-color: var(--orange);
+      box-shadow: 0 0 16px rgba(255, 107, 59, 0.16);
+    }
+
+    .action-icon {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(255,255,255,0.04);
+      font-size: 19px;
+    }
+
+    .action.pink .action-icon { color: var(--yellow); }
+    .action.cyan .action-icon { color: var(--cyan); }
+    .action.yellow .action-icon { color: var(--yellow); }
+    .action.orange .action-icon { color: var(--orange); }
+
+    .action-eyebrow {
+      display: block;
+      color: var(--muted);
+      font: 9px "Courier New", monospace;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .action-title {
+      display: block;
+      margin-top: 5px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .action-detail {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .action-arrow {
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .rescue-card {
+      padding: 17px;
+      border-color: rgba(239, 35, 60, 0.45);
+      box-shadow: 0 0 20px rgba(239, 35, 60, 0.1);
+    }
+
+    .rescue-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .rescue-heading h3 {
+      margin: 8px 0 0;
+      font-size: 18px;
+    }
+
+    .rescue-timer {
+      color: var(--yellow);
+      font: bold 20px "Courier New", monospace;
+    }
+
+    .rescue-track {
+      height: 8px;
+      margin-top: 17px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #08080e;
+    }
+
+    .rescue-progress {
+      height: 100%;
+      width: 0%;
+      background: var(--red);
+      transition: width 180ms ease;
+    }
+
+    .rescue-button {
+      width: 100%;
+      margin-top: 16px;
+      border-color: var(--red);
+      background: var(--red);
+      color: white;
+      font-weight: bold;
+    }
+
+    .rescue-hint {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font: 10px "Courier New", monospace;
+      letter-spacing: 0.14em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .scores {
+      padding: 20px;
+    }
+
+    .score-list {
+      margin-top: 16px;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .score-row:last-child {
+      border-bottom: 0;
+    }
+
+    .score-rank {
+      color: var(--muted);
+      font: 11px "Courier New", monospace;
+    }
+
+    .score-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .score-points {
+      font-family: "Courier New", monospace;
+      font-size: 13px;
+      color: var(--cyan);
+    }
+
+    @keyframes cat-bob {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-6px); }
+    }
+
+    @keyframes cat-breathe {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.02, 0.98); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+
+    @media (max-width: 1100px) {
+      .game-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+
+  <div class="app">
+    <header class="header">
+      <div>
+        <div class="kicker">Live from the tiny apartment</div>
+        <h1>Mochi Drama <span>Central</span></h1>
+        <p class="subtitle">A digital pet tribute for one small cat with giant opinions and zero respect for your cables.</p>
+      </div>
+      <div class="header-actions">
+        <div class="status-chip">
+          <div class="status-dot"></div>
+          <span>System Stable</span>
+        </div>
+        <button class="button" id="reset-btn">Reset Save</button>
+      </div>
+    </header>
+
+    <div class="game-grid">
+      <!-- Left Column: Stats -->
+      <section class="panel stats-panel">
+        <div class="panel-content">
+          <div class="panel-heading">
+            <div>
+              <div class="section-kicker">Telemetry</div>
+              <h2>Pet Status</h2>
+            </div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-top">
+              <span class="stat-label">Hunger</span>
+              <span class="stat-value" id="val-hunger">70%</span>
+            </div>
+            <div class="stat-track">
+              <div class="stat-fill hunger-color" id="fill-hunger" style="width: 70%;"></div>
+            </div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-top">
+              <span class="stat-label">Energy</span>
+              <span class="stat-value" id="val-energy">80%</span>
+            </div>
+            <div class="stat-track">
+              <div class="stat-fill energy-color" id="fill-energy" style="width: 80%;"></div>
+            </div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-top">
+              <span class="stat-label">Drama Level</span>
+              <span class="stat-value" id="val-drama">30%</span>
+            </div>
+            <div class="stat-track">
+              <div class="stat-fill drama-color" id="fill-drama" style="width: 30%;"></div>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <span class="metric-label">Score</span>
+              <strong id="metric-score">50</strong>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Best</span>
+              <strong id="metric-best">50</strong>
+            </div>
+          </div>
+
+          <div class="mood-summary">
+            <span class="section-kicker">Current Mood</span>
+            <div class="mood-summary-value" id="mood-title">Sunbeam mode</div>
+            <p class="mood-summary-detail" id="mood-desc">Stable-ish. Keep the salmon coming.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Column: Room & Reaction -->
+      <section class="panel room-panel">
+        <div class="room-shell">
+          <div class="room-topbar">
+            <div>
+              <div class="section-kicker">02 / Room Cam</div>
+              <p class="room-caption">The scene of the crime</p>
+            </div>
+            <div class="live">● Live</div>
+          </div>
+
+          <div class="room" id="room-box">
+            <div class="window">
+              <div class="window-light"></div>
+            </div>
+            <div class="plant"></div>
+            <div class="cable"><span>Type-C</span></div>
+
+            <div class="cat-shadow"></div>
+            <div class="cat" id="cat-avatar">
+              <div class="cat-ear left"></div>
+              <div class="cat-ear right"></div>
+              <div class="cat-face">
+                <div class="cat-eye left"></div>
+                <div class="cat-eye right"></div>
+                <div class="cat-nose"></div>
+                <div class="cat-mouth">w</div>
+              </div>
+              <div class="cat-belly"></div>
+              <div class="cat-paw left"></div>
+              <div class="cat-paw right"></div>
+              <div class="cat-tail"></div>
+            </div>
+
+            <div class="nameplate">
+              <small>Resident Pet</small>
+              <strong>Mochi</strong>
+            </div>
+
+            <div class="mood-badge">
+              <div class="status-dot"></div>
+              <strong id="badge-text">Chilling</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-content" style="padding-top: 10px;">
+          <div class="reaction happy" id="reaction-box">
+            <div class="reaction-mark" id="reaction-icon">!</div>
+            <div>
+              <div class="reaction-label" id="reaction-type">Mochi Says</div>
+              <p class="reaction-message" id="reaction-text">HEY! THAT CORD IS NOT SPAGHETTI!</p>
+            </div>
+          </div>
+
+          <div class="facts">
+            <div class="fact">Salmon Crisp</div>
+            <div class="fact">Cable Menace</div>
+            <div class="fact">One of One</div>
+            <div class="fact">Rank #1</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Actions -->
+      <section class="panel actions-panel">
+        <div class="panel-content">
+          <div class="panel-heading">
+            <div>
+              <div class="section-kicker">Interventions</div>
+              <h3>Manage the Menace</h3>
+            </div>
+          </div>
+
+          <div class="action-list">
+            <button class="action yellow" id="btn-feed">
+              <div class="action-icon">🐟</div>
+              <div>
+                <span class="action-eyebrow">Treat Protocol</span>
+                <span class="action-title">Feed salmon crisp</span>
+                <span class="action-detail">+25 hunger, -5 drama</span>
+              </div>
+              <span class="action-arrow">›</span>
+            </button>
+
+            <button class="action cyan" id="btn-sleep">
+              <div class="action-icon">🌙</div>
+              <div>
+                <span class="action-eyebrow">Power Save</span>
+                <span class="action-title">Let Mochi sleep</span>
+                <span class="action-detail">Recharges energy</span>
+              </div>
+              <span class="action-arrow">›</span>
+            </button>
+
+            <button class="action orange" id="btn-scold">
+              <div class="action-icon">⚡</div>
+              <div>
+                <span class="action-eyebrow">Last Resort</span>
+                <span class="action-title">Scold cable chewing</span>
+                <span class="action-detail">-40 drama, guaranteed pout</span>
+              </div>
+              <span class="action-arrow">›</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini-Game Rescue Card -->
+        <div class="panel-content rescue-card" id="rescue-card">
+          <div class="rescue-heading">
+            <div>
+              <div class="section-kicker">Mini-Game</div>
+              <h3>Charger Rescue</h3>
+            </div>
+            <div class="rescue-timer" id="rescue-timer">5.0s</div>
+          </div>
+          <div class="rescue-track">
+            <div class="rescue-progress" id="rescue-progress"></div>
+          </div>
+          <button class="button rescue-button" id="btn-rescue">TAP FAST (+25 Score)</button>
+          <p class="rescue-hint">Save the cable from Mochi's jaws!</p>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="panel-content scores">
+          <div class="section-kicker">Archive / Top Humans</div>
+          <div class="score-list">
+            <div class="score-row">
+              <span class="score-rank">01</span>
+              <span class="score-name">Mochi's human</span>
+              <span class="score-points" id="top-score-val">50</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // Game State
+    let state = {
+      hunger: 70,
+      energy: 80,
+      drama: 30,
+      score: 50,
+      best: 50,
+      isSleeping: false
+    };
+
+    // Load from localStorage if present
+    const saved = localStorage.getItem('mochi_state');
+    if (saved) {
+      try { state = JSON.parse(saved); } catch (e) {}
+    }
+
+    const quotes = {
+      happy: [
+        "HEY! THAT CORD IS NOT SPAGHETTI!",
+        "Purr... okay you may live another day.",
+        "Staring into the void. Do not disturb.",
+        "Knocked another glass off the table. Zero regrets."
+      ],
+      warning: [
+        "Your phone charger looks delicious right now.",
+        "Why is my food bowl 30% empty? Unacceptable.",
+        "Staring intensely at your feet under the blanket."
+      ],
+      danger: [
+        "HISS! EMERGENCY DRAMA PROTOCOL ACTIVATED!",
+        "DESTROYING ALL CABLES IN A 5-METER RADIUS!",
+        "HOW DARE YOU INTERRUPT MY 18-HOUR NAP?!"
+      ]
+    };
+
+    function saveState() {
+      localStorage.setItem('mochi_state', JSON.stringify(state));
+    }
+
+    function updateUI() {
+      document.getElementById('val-hunger').textContent = state.hunger + '%';
+      document.getElementById('fill-hunger').style.width = state.hunger + '%';
+
+      document.getElementById('val-energy').textContent = state.energy + '%';
+      document.getElementById('fill-energy').style.width = state.energy + '%';
+
+      document.getElementById('val-drama').textContent = state.drama + '%';
+      document.getElementById('fill-drama').style.width = state.drama + '%';
+
+      document.getElementById('metric-score').textContent = state.score;
+      document.getElementById('metric-best').textContent = state.best;
+      document.getElementById('top-score-val').textContent = state.best;
+
+      const catAvatar = document.getElementById('cat-avatar');
+      const badgeText = document.getElementById('badge-text');
+      const moodTitle = document.getElementById('mood-title');
+      const moodDesc = document.getElementById('mood-desc');
+
+      if (state.isSleeping) {
+        catAvatar.classList.add('sleeping');
+        badgeText.textContent = 'Sleeping (Do Not Disturb)';
+        moodTitle.textContent = 'Deep Slumber Mode';
+        moodDesc.textContent = 'Recharging chaos energy. Battery at maximum.';
+      } else {
+        catAvatar.classList.remove('sleeping');
+        badgeText.textContent = state.drama > 70 ? 'Feral Mode' : 'Chilling';
+        if (state.drama > 70) {
+          moodTitle.textContent = 'Maximum Chaos';
+          moodDesc.textContent = 'Cables are in extreme danger. Act immediately!';
+        } else if (state.hunger < 30) {
+          moodTitle.textContent = 'Hangry Overlord';
+          moodDesc.textContent = 'Demanding sacrifices immediately.';
+        } else {
+          moodTitle.textContent = 'Sunbeam mode';
+          moodDesc.textContent = 'Stable-ish. Keep the salmon coming.';
+        }
+      }
+    }
+
+    function triggerReaction(type, text) {
+      const box = document.getElementById('reaction-box');
+      const icon = document.getElementById('reaction-icon');
+      const label = document.getElementById('reaction-type');
+      const msg = document.getElementById('reaction-text');
+
+      box.className = 'reaction ' + type;
+      if (type === 'happy') {
+        icon.textContent = '!';
+        label.textContent = 'Mochi Says';
+      } else if (type === 'warning') {
+        icon.textContent = '⚡';
+        label.textContent = 'Warning Notice';
+      } else {
+        icon.textContent = '✕';
+        label.textContent = 'Emergency Alert';
+      }
+      msg.textContent = text;
+    }
+
+    // Actions
+    document.getElementById('btn-feed').addEventListener('click', () => {
+      state.hunger = Math.min(100, state.hunger + 25);
+      state.drama = Math.max(0, state.drama - 5);
+      state.score += 10;
+      if (state.score > state.best) state.best = state.score;
+      saveState();
+      updateUI();
+      const randQ = quotes.happy[Math.floor(Math.random() * quotes.happy.length)];
+      triggerReaction('happy', randQ);
+    });
+
+    document.getElementById('btn-sleep').addEventListener('click', () => {
+      state.isSleeping = true;
+      state.energy = Math.min(100, state.energy + 35);
+      state.drama = Math.max(0, state.drama - 10);
+      saveState();
+      updateUI();
+      triggerReaction('happy', "Zzz... human is quiet, good choice.");
+      setTimeout(() => {
+        state.isSleeping = false;
+        saveState();
+        updateUI();
+      }, 4000);
+    });
+
+    document.getElementById('btn-scold').addEventListener('click', () => {
+      state.drama = Math.max(0, state.drama - 40);
+      state.score += 5;
+      if (state.score > state.best) state.best = state.score;
+      saveState();
+      updateUI();
+      const randQ = quotes.danger[Math.floor(Math.random() * quotes.danger.length)];
+      triggerReaction('danger', randQ);
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      state = { hunger: 70, energy: 80, drama: 30, score: 50, best: 50, isSleeping: false };
+      saveState();
+      updateUI();
+      triggerReaction('happy', "System reset. Mochi is judging your choices.");
+    });
+
+    // Mini-Game: Charger Rescue
+    let rescueActive = false;
+    let rescueTimerVal = 5.0;
+    let rescueProgressVal = 0;
+    let rescueInterval = null;
+
+    function startRescueGame() {
+      if (rescueActive) return;
+      rescueActive = true;
+      rescueTimerVal = 5.0;
+      rescueProgressVal = 0;
+      const btn = document.getElementById('btn-rescue');
+      btn.textContent = 'TAP FAST! (0/15)';
+      let taps = 0;
+      const targetTaps = 15;
+
+      const clickHandler = () => {
+        taps++;
+        rescueProgressVal = (taps / targetTaps) * 100;
+        document.getElementById('rescue-progress').style.width = rescueProgressVal + '%';
+        btn.textContent = `TAP FAST! (${taps}/${targetTaps})`;
+        if (taps >= targetTaps) {
+          clearInterval(rescueInterval);
+          rescueActive = false;
+          state.score += 25;
+          state.drama = Math.max(0, state.drama - 20);
+          if (state.score > state.best) state.best = state.score;
+          saveState();
+          updateUI();
+          btn.textContent = 'SAVED! +25 SCORE';
+          triggerReaction('happy', "Hmph! You saved the cable just in time.");
+          setTimeout(() => { btn.textContent = 'TAP FAST (+25 Score)'; }, 2000);
+          btn.removeEventListener('click', clickHandler);
+        }
+      };
+
+      btn.addEventListener('click', clickHandler);
+
+      rescueInterval = setInterval(() => {
+        rescueTimerVal -= 0.1;
+        document.getElementById('rescue-timer').textContent = rescueTimerVal.toFixed(1) + 's';
+        if (rescueTimerVal <= 0) {
+          clearInterval(rescueInterval);
+          rescueActive = false;
+          btn.removeEventListener('click', clickHandler);
+          state.drama = Math.min(100, state.drama + 30);
+          saveState();
+          updateUI();
+          btn.textContent = 'CABLE DESTROYED! -30 DRAMA';
+          triggerReaction('danger', "CRUNCH! Another cable bites the dust.");
+          setTimeout(() => { btn.textContent = 'TAP FAST (+25 Score)'; document.getElementById('rescue-progress').style.width = '0%'; }, 2000);
+        }
+      }, 100);
+    }
+
+    document.getElementById('btn-rescue').addEventListener('click', () => {
+      if (!rescueActive) startRescueGame();
+    });
+
+    // Passive decay over time
+    setInterval(() => {
+      if (!state.isSleeping) {
+        state.hunger = Math.max(0, state.hunger - 2);
+        state.energy = Math.max(0, state.energy - 1);
+        state.drama = Math.min(100, state.drama + 2);
+        saveState();
+        updateUI();
+      }
+    }, 6000);
+
+    updateUI();
+  </script>
+</body>
+</html>
